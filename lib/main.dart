@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:contacts_service/contacts_service.dart';
+import 'package:permission_handler/permission_handler.dart';
 
 void main() {
   runApp(const ContactApp());
@@ -10,9 +11,30 @@ class ContactApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return const MaterialApp(
+    return MaterialApp(
       debugShowCheckedModeBanner: false,
-      home: ContactsListPage()
+      home: StreamBuilder<PermissionStatus>(
+        stream: Permission.contacts.status.asStream(),
+        builder: (context, AsyncSnapshot<PermissionStatus> snap) {
+          if (snap.hasData) {
+            if (snap.data == PermissionStatus.granted) {
+              return const ContactsListPage();
+            } else {
+              return Scaffold(
+                body: Center(
+                  child: ElevatedButton(
+                    onPressed: () {
+                      // Permission.contacts.request();
+                    },
+                    child: const Text("Grant Permission"),
+                  ),
+                ),
+              );
+            }
+          }
+          return const CircularProgressIndicator();
+        },
+      ),
     );
   }
 }
@@ -31,9 +53,9 @@ class ContactsListPage extends StatelessWidget {
               return const Center(child: CircularProgressIndicator());
             }
             if (snap.hasData) {
-              var contacts = snap.data;
+              var contacts = snap.data!;
               return ListView.builder(
-                itemCount: contacts!.length,
+                itemCount: contacts.length,
                 itemBuilder: (BuildContext context, int index) {
                   return ListTile(
                     title: Text(contacts[index].displayName.toString()),
